@@ -1,29 +1,24 @@
 import {
   ConnectedSocket,
   OnGatewayConnection,
-  OnGatewayDisconnect,
   SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { SocketService } from './socket.service';
 
-@WebSocketGateway()
-export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
+@WebSocketGateway({ cors: true })
+export class SocketGateway implements OnGatewayConnection {
+  constructor(private readonly socketService: SocketService) {}
   @WebSocketServer() server: Server;
 
-  afterInit() {}
-
   @SubscribeMessage('message')
-  handleMessage(payload: string): void {
-    this.server.emit('message', payload);
+  handleMessage(_socket: Socket, payload: string): string {
+    return this.socketService.handleMessage(payload);
   }
 
   handleConnection(@ConnectedSocket() socket: Socket) {
-    console.log(socket.rooms);
-  }
-
-  handleDisconnect(@ConnectedSocket() socket: Socket) {
-    console.log(`${socket.id} bye`);
+    this.socketService.handleConnection(socket);
   }
 }
